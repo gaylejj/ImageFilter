@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		256C73801991746700A81710 /* GridViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256C737F1991746700A81710 /* GridViewController.swift */; };
+		256C73821991795000A81710 /* PhotoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256C73811991795000A81710 /* PhotoCell.swift */; };
+		256C738419917DA100A81710 /* PhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256C738319917DA100A81710 /* PhotoViewController.swift */; };
+		256C73851991915300A81710 /* GridViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256C737F1991746700A81710 /* GridViewController.swift */; };
+		256C73861991915500A81710 /* PhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256C738319917DA100A81710 /* PhotoViewController.swift */; };
+		256C73871991916800A81710 /* PhotoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256C73811991795000A81710 /* PhotoCell.swift */; };
 		259874AA1990195B00ACF5F1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259874A91990195B00ACF5F1 /* AppDelegate.swift */; };
 		259874AC1990195B00ACF5F1 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259874AB1990195B00ACF5F1 /* ViewController.swift */; };
 		259874AF1990195B00ACF5F1 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 259874AD1990195B00ACF5F1 /* Main.storyboard */; };
@@ -26,6 +32,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		256C737F1991746700A81710 /* GridViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GridViewController.swift; sourceTree = "<group>"; };
+		256C73811991795000A81710 /* PhotoCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoCell.swift; sourceTree = "<group>"; };
+		256C738319917DA100A81710 /* PhotoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoViewController.swift; sourceTree = "<group>"; };
 		259874A41990195A00ACF5F1 /* ImageFilterApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImageFilterApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		259874A81990195B00ACF5F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		259874A91990195B00ACF5F1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -78,6 +87,9 @@
 			children = (
 				259874A91990195B00ACF5F1 /* AppDelegate.swift */,
 				259874AB1990195B00ACF5F1 /* ViewController.swift */,
+				256C737F1991746700A81710 /* GridViewController.swift */,
+				256C738319917DA100A81710 /* PhotoViewController.swift */,
+				256C73811991795000A81710 /* PhotoCell.swift */,
 				259874AD1990195B00ACF5F1 /* Main.storyboard */,
 				259874B01990195B00ACF5F1 /* Images.xcassets */,
 				259874A71990195A00ACF5F1 /* Supporting Files */,
@@ -210,7 +222,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				259874AC1990195B00ACF5F1 /* ViewController.swift in Sources */,
+				256C73821991795000A81710 /* PhotoCell.swift in Sources */,
 				259874AA1990195B00ACF5F1 /* AppDelegate.swift in Sources */,
+				256C73801991746700A81710 /* GridViewController.swift in Sources */,
+				256C738419917DA100A81710 /* PhotoViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -219,7 +234,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				259874C619901A6100ACF5F1 /* ViewController.swift in Sources */,
+				256C73871991916800A81710 /* PhotoCell.swift in Sources */,
+				256C73861991915500A81710 /* PhotoViewController.swift in Sources */,
 				259874BD1990195B00ACF5F1 /* ImageFilterAppTests.swift in Sources */,
+				256C73851991915300A81710 /* GridViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,6 +417,7 @@
 				259874C21990195B00ACF5F1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		259874C31990195B00ACF5F1 /* Build configuration list for PBXNativeTarget "ImageFilterAppTests" */ = {
 			isa = XCConfigurationList;
@@ -407,6 +426,7 @@
 				259874C51990195B00ACF5F1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

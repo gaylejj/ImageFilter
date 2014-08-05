@@ -7,16 +7,21 @@
 //
 
 import UIKit
+import Photos
 
-class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, SelectedPhotoDelegate {
     
     @IBOutlet weak var imageView: UIImageView!
     
     let imagePicker = UIImagePickerController()
     
+    //Create Action Controller
     let actionController = UIAlertController(title: "Source Type", message: "Please Choose a Source Type", preferredStyle: UIAlertControllerStyle.ActionSheet)
     
+    //Create Alert View
     let alertView = UIAlertController(title: "Alert!", message: "We are about to ask for your permission to access your Camera or Photo Library", preferredStyle: UIAlertControllerStyle.Alert)
+    
+    var imageViewSize : CGSize!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +36,9 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
     
     override func viewDidAppear(animated: Bool) {
         
+        super.viewWillAppear(animated)
+        self.imageViewSize = self.imageView.frame.size
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -38,9 +46,13 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         // Dispose of any resources that can be recreated.
     }
 
-
+    //MARK: Button Action
     @IBAction func handleButtonPressed(sender: AnyObject) {
         
+        if self.actionController.popoverPresentationController {
+            self.actionController.popoverPresentationController.sourceView = sender as UIButton
+        }
+        //Handle First Time Permissions
         if NSUserDefaults.standardUserDefaults().boolForKey("First Permission") {
             self.presentViewController(actionController, animated: true, completion: nil)
 
@@ -51,6 +63,8 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         
     }
     
+    //MARK: Alert View/Action Controller
+    //Setup AlertController Options
     func setupAlertController() {
         let cameraOption = UIAlertAction(title: "Camera", style: UIAlertActionStyle.Default, handler: {(action: UIAlertAction!) -> Void in
             
@@ -61,9 +75,11 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         
         let photoOption = UIAlertAction(title: "Photo Library", style: UIAlertActionStyle.Default, handler: {(action: UIAlertAction!) -> Void in
             
-            self.imagePicker.sourceType = UIImagePickerControllerSourceType.SavedPhotosAlbum
-            self.presentViewController(self.imagePicker, animated: true, completion: nil)
+//            self.imagePicker.sourceType = UIImagePickerControllerSourceType.SavedPhotosAlbum
+//            self.presentViewController(self.imagePicker, animated: true, completion: nil)
             
+            //Segue to Collection View
+            self.performSegueWithIdentifier("ShowGrid", sender: self)             
             })
         
         let cancelOption = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel, handler: {(action: UIAlertAction!) -> Void in
@@ -77,6 +93,7 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         self.actionController.addAction(cancelOption)
     }
     
+    //Setup AlertView Options
     func setupAlertView() {
         let okAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: {(action: UIAlertAction!) -> Void in
             
@@ -87,11 +104,38 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         self.alertView.addAction(okAction)
     }
     
+    //MARK: UIImagePicker
+    //ImagePickerController
     func imagePickerController(picker: UIImagePickerController!, didFinishPickingMediaWithInfo info: [NSObject : AnyObject]!) {
         
         var editedImage = info[UIImagePickerControllerEditedImage] as UIImage
         self.imageView.image = editedImage
         self.dismissViewControllerAnimated(true, completion: nil)
+    }
+    
+    
+    //MARK: Segue
+    
+    //Segue Method
+    override func prepareForSegue(segue: UIStoryboardSegue!, sender: AnyObject!) {
+        if segue.identifier == "ShowGrid" {
+            let gridVC = segue.destinationViewController as GridViewController
+            gridVC.assetsFetchedResult = PHAsset.fetchAssetsWithOptions(nil)
+            gridVC.delegate = self
+        }
+    }
+    
+    //MARK: Selected Photo Delegate
+    func selectedPhoto(asset: PHAsset) -> Void {
+        println("Final step")
+        
+        var targetSize = CGSize(width: CGRectGetWidth(self.imageView.frame), height: CGRectGetHeight(self.imageView.frame))
+        
+        PHImageManager.defaultManager().requestImageForAsset(asset, targetSize: targetSize, contentMode: PHImageContentMode.AspectFill, options: nil) { (result: UIImage!, [NSObject : AnyObject]!) -> Void in
+            
+            self.imageView.image = result
+            
+        }
     }
     
     
