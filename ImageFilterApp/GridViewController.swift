@@ -88,5 +88,5 @@ class GridViewController: UIViewController, UICollectionViewDataSource, Selected
         println("Doing Something for the delegate")
         self.delegate!.selectedPhoto(asset)
     }
-
+    
 }

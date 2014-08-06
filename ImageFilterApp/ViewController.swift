@@ -9,9 +9,17 @@
 import UIKit
 import Photos
 
-class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, SelectedPhotoDelegate {
+class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, PHPhotoLibraryChangeObserver, SelectedPhotoDelegate {
     
     @IBOutlet weak var imageView: UIImageView!
+    
+    var imageViewSize : CGSize!
+
+    var selectedAsset : PHAsset?
+    
+    var context = CIContext(options: nil)
+    
+    let adjustmentFormatterIdentifier = "com.filterappdemo.cf"
     
     let imagePicker = UIImagePickerController()
     
@@ -21,7 +29,6 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
     //Create Alert View
     let alertView = UIAlertController(title: "Alert!", message: "We are about to ask for your permission to access your Camera or Photo Library", preferredStyle: UIAlertControllerStyle.Alert)
     
-    var imageViewSize : CGSize!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,6 +39,8 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         
         self.setupAlertController()
         self.setupAlertView()
+        
+        PHPhotoLibrary.sharedPhotoLibrary().registerChangeObserver(self)
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -79,8 +88,15 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
 //            self.presentViewController(self.imagePicker, animated: true, completion: nil)
             
             //Segue to Collection View
-            self.performSegueWithIdentifier("ShowGrid", sender: self)             
+            self.checkAuthentication({ (status) -> Void in
+                if status == PHAuthorizationStatus.Authorized {
+                    NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+                        self.performSegueWithIdentifier("ShowGrid", sender: self)
+                    })
+                }
+                
             })
+        })
         
         let cancelOption = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel, handler: {(action: UIAlertAction!) -> Void in
             
@@ -122,22 +138,173 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
             let gridVC = segue.destinationViewController as GridViewController
             gridVC.assetsFetchedResult = PHAsset.fetchAssetsWithOptions(nil)
             gridVC.delegate = self
+                    }
+    }
+    
+    func checkAuthentication(completionHandler: (PHAuthorizationStatus) -> Void) -> Void {
+        
+        switch PHPhotoLibrary.authorizationStatus() {
+        case .NotDetermined:
+            println("Not Determined")
+            PHPhotoLibrary.requestAuthorization({ (status: PHAuthorizationStatus) -> Void in
+                completionHandler(status)
+            })
+        default:
+            println("Restricted")
+            println("Denied")
+            completionHandler(PHPhotoLibrary.authorizationStatus())
         }
+        
     }
     
     //MARK: Selected Photo Delegate
     func selectedPhoto(asset: PHAsset) -> Void {
         println("Final step")
         
-        var targetSize = CGSize(width: CGRectGetWidth(self.imageView.frame), height: CGRectGetHeight(self.imageView.frame))
+        self.selectedAsset = asset
+        self.updateImage()
         
-        PHImageManager.defaultManager().requestImageForAsset(asset, targetSize: targetSize, contentMode: PHImageContentMode.AspectFill, options: nil) { (result: UIImage!, [NSObject : AnyObject]!) -> Void in
+//        var targetSize = CGSize(width: CGRectGetWidth(self.imageView.frame), height: CGRectGetHeight(self.imageView.frame))
+//        
+//        PHImageManager.defaultManager().requestImageForAsset(asset, targetSize: targetSize, contentMode: PHImageContentMode.AspectFill, options: nil) { (result: UIImage!, [NSObject : AnyObject]!) -> Void in
+//            
+//            self.imageView.image = result
+//            
+//        }
+    }
+    
+    //MARK: Filter Methods
+    @IBAction func handleSepiaPressed(sender: AnyObject) {
+        
+        var options = PHContentEditingInputRequestOptions()
+        options.canHandleAdjustmentData = {(data : PHAdjustmentData!) -> Bool in
+            
+            return data.formatIdentifier == self.adjustmentFormatterIdentifier && data.formatVersion == "1.0"
+            
+            }
+        
+        self.selectedAsset!.requestContentEditingInputWithOptions(options, completionHandler: { (contentEditingInput : PHContentEditingInput!, info : [NSObject : AnyObject]!) -> Void in
+            
+            //Grabbing Image and converting to CIImage
+            var url = contentEditingInput.fullSizeImageURL
+            var orientation = contentEditingInput.fullSizeImageOrientation
+            var inputImage = CIImage(contentsOfURL: url)
+            inputImage = inputImage.imageByApplyingOrientation(orientation)
+            
+            //Creating Filter
+            var filterName = "CISepiaTone"
+            var filter = CIFilter(name: filterName)
+            filter.setDefaults()
+            filter.setValue(inputImage, forKey: kCIInputImageKey)
+            var outputImage = filter.outputImage
+            
+            var cgImage = self.context.createCGImage(outputImage, fromRect: outputImage.extent())
+            var finalImage = UIImage(CGImage: cgImage)
+            var jpegData = UIImageJPEGRepresentation(finalImage, 1.0)
+            
+            //Create our adjustmentData
+            var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
+            var contentEditingOutput = PHContentEditingOutput(contentEditingInput: contentEditingInput)
+            jpegData.writeToURL(contentEditingOutput.renderedContentURL, atomically: true)
+            contentEditingOutput.adjustmentData = adjustmentData
+            
+            PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+            
+                var request = PHAssetChangeRequest(forAsset: self.selectedAsset)
+                request.contentEditingOutput = contentEditingOutput
+                
+                }, completionHandler: { (success : Bool, error : NSError!) -> Void in
+                
+                    if !success {
+                        println(error.localizedDescription)
+                    }
+                    
+            })
+            
+            
+        })
+    }
+    
+    func updateImage() {
+        
+        var targetSize = self.imageView.frame.size
+        PHImageManager.defaultManager().requestImageForAsset(self.selectedAsset, targetSize: targetSize, contentMode: PHImageContentMode.AspectFill, options: nil) { (result : UIImage!, info : [NSObject : AnyObject]!) -> Void in
             
             self.imageView.image = result
+        }
+        
+    }
+    
+    func photoLibraryDidChange(changeInstance: PHChange!) {
+        NSOperationQueue.mainQueue().addOperationWithBlock { () -> Void in
+            
+            if self.selectedAsset != nil {
+                var changeDetails = changeInstance.changeDetailsForObject(self.selectedAsset)
+                
+                if changeDetails != nil {
+                    self.selectedAsset = changeDetails.objectAfterChanges as? PHAsset
+                    
+                    if changeDetails.assetContentChanged {
+                        self.updateImage()
+                    }
+                }
+            }
             
         }
     }
     
+    //Noir Button
+    @IBAction func handleNoirPressed(sender: AnyObject) {
+        
+        var options = PHContentEditingInputRequestOptions()
+        options.canHandleAdjustmentData = {(data : PHAdjustmentData!) -> Bool in
+            
+            return data.formatIdentifier == self.adjustmentFormatterIdentifier && data.formatVersion == "1.0"
+            
+        }
+        
+        self.selectedAsset!.requestContentEditingInputWithOptions(options, completionHandler: { (contentEditingInput : PHContentEditingInput!, info : [NSObject : AnyObject]!) -> Void in
+            
+            //Grabbing Image and converting to CIImage
+            var url = contentEditingInput.fullSizeImageURL
+            var orientation = contentEditingInput.fullSizeImageOrientation
+            var inputImage = CIImage(contentsOfURL: url)
+            inputImage = inputImage.imageByApplyingOrientation(orientation)
+            
+            //Creating Filter
+            var filterName = "CIPhotoEffectNoir"
+            var filter = CIFilter(name: filterName)
+            filter.setDefaults()
+            filter.setValue(inputImage, forKey: kCIInputImageKey)
+            var outputImage = filter.outputImage
+            
+            var cgImage = self.context.createCGImage(outputImage, fromRect: outputImage.extent())
+            var finalImage = UIImage(CGImage: cgImage)
+            var jpegData = UIImageJPEGRepresentation(finalImage, 1.0)
+            
+            //Create our adjustmentData
+            var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
+            var contentEditingOutput = PHContentEditingOutput(contentEditingInput: contentEditingInput)
+            jpegData.writeToURL(contentEditingOutput.renderedContentURL, atomically: true)
+            contentEditingOutput.adjustmentData = adjustmentData
+            
+            PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+                
+                var request = PHAssetChangeRequest(forAsset: self.selectedAsset)
+                request.contentEditingOutput = contentEditingOutput
+                
+                }, completionHandler: { (success : Bool, error : NSError!) -> Void in
+                    
+                    if !success {
+                        println(error.localizedDescription)
+                    }
+                    
+            })
+            
+            
+        })
+        
+    }
     
 
 }

@@ -2,6 +2,7 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6205" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="3a6-LS-453">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6198"/>
+        <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
         <capability name="Constraints with attributes relative to the layout margin" minToolsVersion="6.0"/>
     </dependencies>
     <scenes>
@@ -31,18 +32,39 @@
                                 </connections>
                             </button>
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="v01-dU-gu5">
-                                <rect key="frame" x="50" y="64" width="500" height="261"/>
+                                <rect key="frame" x="80" y="64" width="440" height="261"/>
                             </imageView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="CQk-N6-i1z">
+                                <rect key="frame" x="188" y="500" width="39" height="30"/>
+                                <state key="normal" title="Sepia">
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="handleSepiaPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="GZA-vt-rCv"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="VpX-uD-Dz9">
+                                <rect key="frame" x="373" y="500" width="30" height="30"/>
+                                <state key="normal" title="Noir">
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="handleNoirPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="4af-fM-kfT"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstAttribute="centerX" secondItem="EgN-np-yJ3" secondAttribute="centerX" id="I0r-9x-BFq"/>
-                            <constraint firstAttribute="trailing" secondItem="v01-dU-gu5" secondAttribute="trailing" constant="50" id="Oa8-6O-pJI"/>
-                            <constraint firstItem="v01-dU-gu5" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" id="R6s-Fn-5PO"/>
-                            <constraint firstItem="EgN-np-yJ3" firstAttribute="top" secondItem="v01-dU-gu5" secondAttribute="bottom" constant="175" id="URK-YS-nMm"/>
-                            <constraint firstAttribute="centerX" secondItem="v01-dU-gu5" secondAttribute="centerX" id="Uub-YS-ROv"/>
-                            <constraint firstItem="v01-dU-gu5" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="50" id="fRy-AD-Ypi"/>
-                            <constraint firstAttribute="bottom" secondItem="v01-dU-gu5" secondAttribute="bottom" constant="275" id="lTd-SF-O86"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="v01-dU-gu5" secondAttribute="trailing" constant="64" id="37H-Eh-jzC"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="v01-dU-gu5" secondAttribute="bottom" constant="275" id="3FS-0l-P4O"/>
+                            <constraint firstItem="EgN-np-yJ3" firstAttribute="leading" secondItem="CQk-N6-i1z" secondAttribute="trailing" constant="50" id="CtG-RM-uy6"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="VpX-uD-Dz9" secondAttribute="bottom" constant="70" id="FY7-RW-DLP"/>
+                            <constraint firstItem="v01-dU-gu5" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" id="LBK-hx-5RV"/>
+                            <constraint firstItem="VpX-uD-Dz9" firstAttribute="leading" secondItem="EgN-np-yJ3" secondAttribute="trailing" constant="50" id="Ldq-Ev-bK4"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="CQk-N6-i1z" secondAttribute="bottom" constant="70" id="Oh6-QW-1Pr"/>
+                            <constraint firstAttribute="centerX" secondItem="EgN-np-yJ3" secondAttribute="centerX" id="SA8-Nr-cau"/>
+                            <constraint firstItem="v01-dU-gu5" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="64" id="hVC-mU-6gi"/>
+                            <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="EgN-np-yJ3" secondAttribute="bottom" constant="70" id="ssZ-pS-Fyq"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="ZKv-wK-xEf"/>
@@ -168,6 +190,9 @@
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="c78-TI-DEA">
                                 <rect key="frame" x="256" y="550" width="88" height="30"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="30" id="O3h-2x-k4f"/>
+                                </constraints>
                                 <state key="normal" title="Select Photo">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
@@ -176,17 +201,21 @@
                                 </connections>
                             </button>
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="VVd-5c-FAk">
-                                <rect key="frame" x="48" y="80" width="504" height="380"/>
+                                <rect key="frame" x="133.5" y="80" width="333" height="250"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="250" id="4rk-tO-cii"/>
+                                    <constraint firstAttribute="width" secondItem="VVd-5c-FAk" secondAttribute="height" multiplier="4:3" id="RHM-am-eKX"/>
+                                </constraints>
                             </imageView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstAttribute="bottomMargin" secondItem="VVd-5c-FAk" secondAttribute="bottom" constant="270" id="ErW-xK-VcP"/>
                             <constraint firstItem="VVd-5c-FAk" firstAttribute="top" secondItem="eDW-OY-Hhi" secondAttribute="bottom" constant="16" id="FsQ-aK-ahg"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="VVd-5c-FAk" secondAttribute="trailing" constant="32" id="Hcg-NO-1Tp"/>
+                            <constraint firstItem="c78-TI-DEA" firstAttribute="top" secondItem="VVd-5c-FAk" secondAttribute="bottom" constant="220" id="bSh-8p-UsC"/>
                             <constraint firstItem="g5d-mP-von" firstAttribute="top" secondItem="c78-TI-DEA" secondAttribute="bottom" constant="20" id="fU4-o7-pPx"/>
                             <constraint firstAttribute="centerX" secondItem="c78-TI-DEA" secondAttribute="centerX" id="gKe-dG-DTY"/>
-                            <constraint firstItem="g5d-mP-von" firstAttribute="top" secondItem="VVd-5c-FAk" secondAttribute="bottom" constant="140" id="kca-oR-E7m"/>
-                            <constraint firstItem="VVd-5c-FAk" firstAttribute="leading" secondItem="6xj-tz-Xgk" secondAttribute="leadingMargin" constant="32" id="tQs-sv-H1e"/>
+                            <constraint firstAttribute="centerX" secondItem="VVd-5c-FAk" secondAttribute="centerX" id="geo-L5-9ed"/>
                         </constraints>
                     </view>
                     <connections>
