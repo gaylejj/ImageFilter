@@ -9,7 +9,7 @@
 import UIKit
 import Photos
 
-class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, PHPhotoLibraryChangeObserver, SelectedPhotoDelegate {
+class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, PHPhotoLibraryChangeObserver, UICollectionViewDataSource, UICollectionViewDelegate, SelectedPhotoDelegate {
     
     @IBOutlet weak var imageView: UIImageView!
     
@@ -17,11 +17,23 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
 
     var selectedAsset : PHAsset?
     
+    @IBOutlet weak var collectionView: UICollectionView!
+    
     var context = CIContext(options: nil)
     
     let adjustmentFormatterIdentifier = "com.filterappdemo.cf"
     
     let imagePicker = UIImagePickerController()
+    
+    let filterNames = ["CISepia Tone", "CIPhotoEffectNoir", "CIColorInvert", "CIComicEffect"]
+    
+    var filters = [Filter]()
+    
+    var filter : CIFilter?
+    
+    var filterThumbnail : UIImage?
+    
+    @IBOutlet weak var filterImageView: UIImageView!
     
     //Create Action Controller
     let actionController = UIAlertController(title: "Source Type", message: "Please Choose a Source Type", preferredStyle: UIAlertControllerStyle.ActionSheet)
@@ -41,6 +53,14 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         self.setupAlertView()
         
         PHPhotoLibrary.sharedPhotoLibrary().registerChangeObserver(self)
+        
+        
+        self.resetFilters()
+        
+        let cameraButton = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.Camera, target: self, action: "handleButtonPressed:")
+        
+        self.navigationItem.rightBarButtonItem = cameraButton
+        
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -54,12 +74,20 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    func resetFilters () {
+        let sepia = Filter(name: "CISepiaTone")
+        let noir = Filter(name: "CIPhotoEffectNoir")
+        let invert = Filter(name: "CIColorInvert")
+        let posterize = Filter(name: "CIColorPosterize")
+        self.filters = [sepia, noir, invert, posterize]
+    }
 
     //MARK: Button Action
-    @IBAction func handleButtonPressed(sender: AnyObject) {
+    func handleButtonPressed(sender: AnyObject) {
         
         if self.actionController.popoverPresentationController {
-            self.actionController.popoverPresentationController.sourceView = sender as UIButton
+            self.actionController.popoverPresentationController.barButtonItem = sender as UIBarButtonItem
         }
         //Handle First Time Permissions
         if NSUserDefaults.standardUserDefaults().boolForKey("First Permission") {
@@ -162,68 +190,12 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         println("Final step")
         
         self.selectedAsset = asset
+        self.fetchThumbnailImage()
+        self.resetFilters()
         self.updateImage()
-        
-//        var targetSize = CGSize(width: CGRectGetWidth(self.imageView.frame), height: CGRectGetHeight(self.imageView.frame))
-//        
-//        PHImageManager.defaultManager().requestImageForAsset(asset, targetSize: targetSize, contentMode: PHImageContentMode.AspectFill, options: nil) { (result: UIImage!, [NSObject : AnyObject]!) -> Void in
-//            
-//            self.imageView.image = result
-//            
-//        }
     }
     
-    //MARK: Filter Methods
-    @IBAction func handleSepiaPressed(sender: AnyObject) {
-        
-        var options = PHContentEditingInputRequestOptions()
-        options.canHandleAdjustmentData = {(data : PHAdjustmentData!) -> Bool in
-            
-            return data.formatIdentifier == self.adjustmentFormatterIdentifier && data.formatVersion == "1.0"
-            
-            }
-        
-        self.selectedAsset!.requestContentEditingInputWithOptions(options, completionHandler: { (contentEditingInput : PHContentEditingInput!, info : [NSObject : AnyObject]!) -> Void in
-            
-            //Grabbing Image and converting to CIImage
-            var url = contentEditingInput.fullSizeImageURL
-            var orientation = contentEditingInput.fullSizeImageOrientation
-            var inputImage = CIImage(contentsOfURL: url)
-            inputImage = inputImage.imageByApplyingOrientation(orientation)
-            
-            //Creating Filter
-            var filterName = "CISepiaTone"
-            var filter = CIFilter(name: filterName)
-            filter.setDefaults()
-            filter.setValue(inputImage, forKey: kCIInputImageKey)
-            var outputImage = filter.outputImage
-            
-            var cgImage = self.context.createCGImage(outputImage, fromRect: outputImage.extent())
-            var finalImage = UIImage(CGImage: cgImage)
-            var jpegData = UIImageJPEGRepresentation(finalImage, 1.0)
-            
-            //Create our adjustmentData
-            var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
-            var contentEditingOutput = PHContentEditingOutput(contentEditingInput: contentEditingInput)
-            jpegData.writeToURL(contentEditingOutput.renderedContentURL, atomically: true)
-            contentEditingOutput.adjustmentData = adjustmentData
-            
-            PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-            
-                var request = PHAssetChangeRequest(forAsset: self.selectedAsset)
-                request.contentEditingOutput = contentEditingOutput
-                
-                }, completionHandler: { (success : Bool, error : NSError!) -> Void in
-                
-                    if !success {
-                        println(error.localizedDescription)
-                    }
-                    
-            })
-            
-            
-        })
-    }
+
     
     func updateImage() {
         
@@ -253,8 +225,57 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         }
     }
     
-    //Noir Button
-    @IBAction func handleNoirPressed(sender: AnyObject) {
+
+    
+    //MARK: UICollectionView Data Source
+    func collectionView(collectionView: UICollectionView!, cellForItemAtIndexPath indexPath: NSIndexPath!) -> UICollectionViewCell! {
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("filterCell", forIndexPath: indexPath) as FilterCollectionViewCell
+        
+        let filter = self.filters[indexPath.item] as Filter
+        
+        if self.filterThumbnail != nil {
+            cell.filterImageView.image = filterThumbnail
+            if filter.thumbnailImage != nil {
+                cell.filterImageView.image = filter.thumbnailImage
+            } else {
+                filter.createFilterThumbnailFromImage(self.filterThumbnail!, completionHandler: { (image) -> Void in
+                    cell.filterImageView.image = image
+                })
+            }
+        }
+        cell.filterLabel.text = filter.name
+        
+        return cell
+    }
+
+    func collectionView(collectionView: UICollectionView!, numberOfItemsInSection section: Int) -> Int {
+        return self.filters.count
+    }
+    
+    func fetchThumbnailImage() {
+        if self.selectedAsset != nil {
+            PHImageManager.defaultManager().requestImageForAsset(self.selectedAsset, targetSize: self.imageViewSize, contentMode: PHImageContentMode.AspectFill, options: nil, resultHandler: { (result: UIImage!, info: [NSObject : AnyObject]!) -> Void in
+                
+                self.filterThumbnail = result
+                
+            })
+            NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+                self.collectionView.reloadData()
+            })
+        }
+    }
+    
+    //MARK: New Filter method
+    
+    func collectionView(collectionView: UICollectionView!, didSelectItemAtIndexPath indexPath: NSIndexPath!) {
+        
+        let filter = self.filters[indexPath.item] as Filter
+
+        self.switchFilter(filter.name)
+
+    }
+    
+    func switchFilter(filter: String) {
         
         var options = PHContentEditingInputRequestOptions()
         options.canHandleAdjustmentData = {(data : PHAdjustmentData!) -> Bool in
@@ -272,15 +293,15 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
             inputImage = inputImage.imageByApplyingOrientation(orientation)
             
             //Creating Filter
-            var filterName = "CIPhotoEffectNoir"
-            var filter = CIFilter(name: filterName)
+//            var filterName = "CISepiaTone"
+            var filter = CIFilter(name: filter)
             filter.setDefaults()
             filter.setValue(inputImage, forKey: kCIInputImageKey)
             var outputImage = filter.outputImage
             
             var cgImage = self.context.createCGImage(outputImage, fromRect: outputImage.extent())
             var finalImage = UIImage(CGImage: cgImage)
-            var jpegData = UIImageJPEGRepresentation(finalImage, 1.0)
+            var jpegData = UIImageJPEGRepresentation(finalImage, 0.7)
             
             //Create our adjustmentData
             var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
@@ -303,9 +324,113 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
             
             
         })
-        
+
     }
     
+    
+    
+    
+    //MARK: Filter Methods
+//    @IBAction func handleSepiaPressed(sender: AnyObject) {
+//        
+//        var options = PHContentEditingInputRequestOptions()
+//        options.canHandleAdjustmentData = {(data : PHAdjustmentData!) -> Bool in
+//            
+//            return data.formatIdentifier == self.adjustmentFormatterIdentifier && data.formatVersion == "1.0"
+//            
+//        }
+//        
+//        self.selectedAsset!.requestContentEditingInputWithOptions(options, completionHandler: { (contentEditingInput : PHContentEditingInput!, info : [NSObject : AnyObject]!) -> Void in
+//            
+//            //Grabbing Image and converting to CIImage
+//            var url = contentEditingInput.fullSizeImageURL
+//            var orientation = contentEditingInput.fullSizeImageOrientation
+//            var inputImage = CIImage(contentsOfURL: url)
+//            inputImage = inputImage.imageByApplyingOrientation(orientation)
+//            
+//            //Creating Filter
+//            var filterName = "CISepiaTone"
+//            var filter = CIFilter(name: filterName)
+//            filter.setDefaults()
+//            filter.setValue(inputImage, forKey: kCIInputImageKey)
+//            var outputImage = filter.outputImage
+//            
+//            var cgImage = self.context.createCGImage(outputImage, fromRect: outputImage.extent())
+//            var finalImage = UIImage(CGImage: cgImage)
+//            var jpegData = UIImageJPEGRepresentation(finalImage, 0.7)
+//            
+//            //Create our adjustmentData
+//            var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
+//            var contentEditingOutput = PHContentEditingOutput(contentEditingInput: contentEditingInput)
+//            jpegData.writeToURL(contentEditingOutput.renderedContentURL, atomically: true)
+//            contentEditingOutput.adjustmentData = adjustmentData
+//            
+//            PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+//                
+//                var request = PHAssetChangeRequest(forAsset: self.selectedAsset)
+//                request.contentEditingOutput = contentEditingOutput
+//                
+//                }, completionHandler: { (success : Bool, error : NSError!) -> Void in
+//                    
+//                    if !success {
+//                        println(error.localizedDescription)
+//                    }
+//                    
+//            })
+//            
+//            
+//        })
+//    }
+//
+//    
+//    //Noir Button
+//    @IBAction func handleNoirPressed(sender: AnyObject) {
+//        
+//        var options = PHContentEditingInputRequestOptions()
+//        options.canHandleAdjustmentData = {(data : PHAdjustmentData!) -> Bool in
+//            
+//            return data.formatIdentifier == self.adjustmentFormatterIdentifier && data.formatVersion == "1.0"
+//            
+//        }
+//        
+//        self.selectedAsset!.requestContentEditingInputWithOptions(options, completionHandler: { (contentEditingInput : PHContentEditingInput!, info : [NSObject : AnyObject]!) -> Void in
+//            
+//            //Grabbing Image and converting to CIImage
+//            var url = contentEditingInput.fullSizeImageURL
+//            var orientation = contentEditingInput.fullSizeImageOrientation
+//            var inputImage = CIImage(contentsOfURL: url)
+//            inputImage = inputImage.imageByApplyingOrientation(orientation)
+//            
+//            //Creating Filter
+//            var filterName = "CIPhotoEffectNoir"
+//            var filter = CIFilter(name: filterName)
+//            filter.setDefaults()
+//            filter.setValue(inputImage, forKey: kCIInputImageKey)
+//            var outputImage = filter.outputImage
+//            
+//            var cgImage = self.context.createCGImage(outputImage, fromRect: outputImage.extent())
+//            var finalImage = UIImage(CGImage: cgImage)
+//            var jpegData = UIImageJPEGRepresentation(finalImage, 0.7)
+//            
+//            //Create our adjustmentData
+//            var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
+//            var contentEditingOutput = PHContentEditingOutput(contentEditingInput: contentEditingInput)
+//            jpegData.writeToURL(contentEditingOutput.renderedContentURL, atomically: true)
+//            contentEditingOutput.adjustmentData = adjustmentData
+//            
+//            PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+//                
+//                var request = PHAssetChangeRequest(forAsset: self.selectedAsset)
+//                request.contentEditingOutput = contentEditingOutput
+//                
+//                }, completionHandler: { (success : Bool, error : NSError!) -> Void in
+//                    
+//                    if !success {
+//                        println(error.localizedDescription)
+//                    }
+//            })
+//        })
+//    }
 
 }
 
