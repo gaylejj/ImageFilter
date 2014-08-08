@@ -9,11 +9,13 @@
 import UIKit
 import Photos
 
-class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, PHPhotoLibraryChangeObserver, UICollectionViewDataSource, UICollectionViewDelegate, SelectedPhotoDelegate {
+class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate, PHPhotoLibraryChangeObserver, UICollectionViewDataSource, UICollectionViewDelegate, SelectedPhotoDelegate, CameraPhotoDelegate {
     
     @IBOutlet weak var imageView: UIImageView!
     
     var imageViewSize : CGSize!
+    
+    var thumbnailViewSize : CGSize!
 
     var selectedAsset : PHAsset?
     
@@ -33,7 +35,7 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
     
     var filterThumbnail : UIImage?
     
-    @IBOutlet weak var filterImageView: UIImageView!
+    var thumbnailQueue = NSOperationQueue()
     
     //Create Action Controller
     let actionController = UIAlertController(title: "Source Type", message: "Please Choose a Source Type", preferredStyle: UIAlertControllerStyle.ActionSheet)
@@ -61,12 +63,18 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         
         self.navigationItem.rightBarButtonItem = cameraButton
         
+        let cameraVC = self.storyboard.instantiateViewControllerWithIdentifier("Camera") as CameraViewController
+        cameraVC.delegate = self
+        
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewWillAppear(animated: Bool) {
         
         super.viewWillAppear(animated)
         self.imageViewSize = self.imageView.frame.size
+        var layoutObject = self.collectionView.collectionViewLayout as UICollectionViewFlowLayout
+        self.thumbnailViewSize = layoutObject.itemSize
+        println(self.thumbnailViewSize)
         
     }
 
@@ -80,7 +88,9 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         let noir = Filter(name: "CIPhotoEffectNoir")
         let invert = Filter(name: "CIColorInvert")
         let posterize = Filter(name: "CIColorPosterize")
-        self.filters = [sepia, noir, invert, posterize]
+        let instant = Filter(name: "CIPhotoEffectInstant")
+        let process = Filter(name: "CIPhotoEffectProcess")
+        self.filters = [sepia, noir, invert, posterize, instant, process]
     }
 
     //MARK: Button Action
@@ -195,7 +205,9 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         self.updateImage()
     }
     
-
+    func cameraPictureSelected(data: NSData!) {
+        self.imageView.image = UIImage(data: data)
+    }
     
     func updateImage() {
         
@@ -232,16 +244,31 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("filterCell", forIndexPath: indexPath) as FilterCollectionViewCell
         
         let filter = self.filters[indexPath.item] as Filter
-        
+        cell.filterImageView.image = nil
         if self.filterThumbnail != nil {
+            cell.userInteractionEnabled = true
             cell.filterImageView.image = filterThumbnail
+            
             if filter.thumbnailImage != nil {
+                println("accessing cache")
                 cell.filterImageView.image = filter.thumbnailImage
+                
             } else {
-                filter.createFilterThumbnailFromImage(self.filterThumbnail!, completionHandler: { (image) -> Void in
-                    cell.filterImageView.image = image
+                println("filtering")
+//                self.thumbnailQueue.addOperationWithBlock({ () -> Void in
+                    filter.createFilterThumbnailFromImage(self.filterThumbnail!, completionHandler: { (image) -> Void in
+//                        NSOperationQueue.mainQueue().addOperationWithBlock({ () -> Void in
+                            cell.filterImageView.image = image
+//                        })
+                        
+//                    })
+                    
                 })
+              
             }
+            
+        } else {
+            cell.userInteractionEnabled = false
         }
         cell.filterLabel.text = filter.name
         
@@ -253,8 +280,9 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
     }
     
     func fetchThumbnailImage() {
+        
         if self.selectedAsset != nil {
-            PHImageManager.defaultManager().requestImageForAsset(self.selectedAsset, targetSize: self.imageViewSize, contentMode: PHImageContentMode.AspectFill, options: nil, resultHandler: { (result: UIImage!, info: [NSObject : AnyObject]!) -> Void in
+            PHImageManager.defaultManager().requestImageForAsset(self.selectedAsset, targetSize: self.thumbnailViewSize, contentMode: PHImageContentMode.AspectFill, options: nil, resultHandler: { (result: UIImage!, info: [NSObject : AnyObject]!) -> Void in
                 
                 self.filterThumbnail = result
                 
@@ -304,6 +332,7 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
             var jpegData = UIImageJPEGRepresentation(finalImage, 0.7)
             
             //Create our adjustmentData
+            //Different Data Method for saving to avoid adjustment data too large bug - Kirby
             var adjustmentData = PHAdjustmentData(formatIdentifier: self.adjustmentFormatterIdentifier, formatVersion: "1.0", data: jpegData)
             var contentEditingOutput = PHContentEditingOutput(contentEditingInput: contentEditingInput)
             jpegData.writeToURL(contentEditingOutput.renderedContentURL, atomically: true)

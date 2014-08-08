@@ -19,13 +19,21 @@ class Filter {
     }
     
     func createFilterThumbnailFromImage(image: UIImage, completionHandler: (image: UIImage) -> Void) {
+        
+        var context = CIContext(options: nil)
+        
+        //Cache so not getting filter every time Cell Dequeued
         let inputImage = CIImage(image: image)
         var filter = CIFilter(name: self.name)
         filter.setDefaults()
         filter.setValue(inputImage, forKey: kCIInputImageKey)
         var outputImage = filter.outputImage
         
-        var finalImage = UIImage(CIImage: outputImage)
-        completionHandler(image: finalImage)
+        var testImage = UIImage(CGImage: context.createCGImage(outputImage, fromRect: outputImage.extent()))
+        
+//        var finalImage = UIImage(CIImage: outputImage)
+        self.thumbnailImage = testImage
+        println(testImage.size)
+        completionHandler(image: testImage)
     }
 }
