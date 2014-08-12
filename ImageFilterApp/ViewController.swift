@@ -142,9 +142,15 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
             
             })
         
+        let avCameraOption = UIAlertAction(title: "AV Camera", style: UIAlertActionStyle.Default) { (action: UIAlertAction!) -> Void in
+            println("AV controller")
+            self.performSegueWithIdentifier("ShowFoundation", sender: self)
+        }
+        
         self.actionController.addAction(cameraOption)
         self.actionController.addAction(photoOption)
         self.actionController.addAction(cancelOption)
+        self.actionController.addAction(avCameraOption)
     }
     
     //Setup AlertView Options

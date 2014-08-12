@@ -83,8 +83,13 @@
                                             <rect key="frame" x="0.0" y="0.0" width="115" height="135"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="5gL-mx-KPM">
+                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="5gL-mx-KPM" customClass="IBDesgignableView" customModule="ImageFilterApp" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="115" height="103"/>
+                                                    <userDefinedRuntimeAttributes>
+                                                        <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                                            <real key="value" value="0.0"/>
+                                                        </userDefinedRuntimeAttribute>
+                                                    </userDefinedRuntimeAttributes>
                                                 </imageView>
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Vxy-k6-MNC">
                                                     <rect key="frame" x="0.0" y="103" width="115" height="30"/>
@@ -154,6 +159,7 @@
                         <outlet property="collectionView" destination="NJS-Rg-cV9" id="eph-yP-JnT"/>
                         <outlet property="imageView" destination="v01-dU-gu5" id="hrn-J8-vEh"/>
                         <segue destination="Zzp-k5-OQ3" kind="show" identifier="ShowGrid" id="sv3-0j-Zob"/>
+                        <segue destination="NRA-G6-gzD" kind="show" identifier="ShowFoundation" id="l66-L6-gIY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
